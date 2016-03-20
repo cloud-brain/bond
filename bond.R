@@ -107,11 +107,12 @@ bond_totol_return <- function(price, start_date, sold_date, end_date, coupon_rat
   {
     ((12 * (date_end$year - date_start$year) + (date_end$mon - date_start$mon) - ifelse(date_end$mday >= date_start$mday, 0, 1)) / times) %>% floor %>% return
   }
-  time_ratio <- function(date_start, date_end, next_period)
+  time_ratio <- function(date_start, date_end, next_period, times)
   {
-    next_date <- end_date$mon - next_period
+    next_date <- end_date$mon - next_period * 12 / times
     first_date <- next_date
     first_date$mon <- first_date$mon - 12 / times
+    return(as.numeric(next_date - start_date) / as.numeric(next_date - start_date))
   }
   ##计算卖出债券时的价格
   sold_price <- bond_price(start_date, end_date, coupon_rate, sold_rate, times)
@@ -126,11 +127,10 @@ bond_totol_return <- function(price, start_date, sold_date, end_date, coupon_rat
   period_buy <- count_period(start_date, end_date, 12 / times)
   
   coupon_coupon <- future_value(coupon, reinvest_rate, period_sell - period_buy)
-  
-  coupon_coupon <- conpon_coupon * reinvest_rate ^ (sold_date - next_date)%>%as.numeric
+  coupon_coupon <- conpon_coupon * reinvest_rate ^ time_ratio(sold_date, end_date, period_sell, times)
   
   ##计算全收益率
-  
+  return((ln((coupon_coupon + sold_price) / price) / (period_sell - period_buy + time_ratio(sold_date, end_date, period_sell, times) + time_ratio(buy_date, end_date, period_buy, times)) - 1) %>%exp -1)
   
 }
 
